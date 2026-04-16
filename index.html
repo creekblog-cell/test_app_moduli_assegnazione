@@ -171,18 +171,25 @@ async function caricaRegistro() {
   }
 
   try {
-    const response = await fetch('https://script.google.com/macros/s/AKfycbxZYTJgPe-JscmnwYVns6hJQMQEwrRDU6nC_b2omvecM-tv7gI00jTlk1pFJMQWo7HO/exec?action=getRegistro');
-    const data = await response.json();
-    registroAssegnati = data || [];
+    const url = 'https://script.google.com/macros/s/AKfycbxZYTJgPe-JscmnwYVns6hJQMQEwrRDU6nC_b2omvecM-tv7gI00jTlk1pFJMQWo7HO/exec?action=getRegistro';
+    const response = await fetch(url + '&t=' + Date.now(), { cache: 'no-store' });
+    const text = await response.text();
+
+    console.log('RISPOSTA REGISTRO RAW:', text);
+
+    const parsed = JSON.parse(text);
+    registroAssegnati = Array.isArray(parsed) ? parsed : (parsed.data || []);
+
     localStorage.setItem('registroAssegnati', JSON.stringify(registroAssegnati));
     localStorage.setItem('ultimaAggiornamento', ora.toISOString());
+
     console.log('Registro aggiornato:', registroAssegnati.length, 'record');
   } catch (e) {
     console.log('Errore caricamento registro, uso cache');
     registroAssegnati = cacheRegistro ? JSON.parse(cacheRegistro) : [];
   }
 }
-
+  
 function filtraUtentiDisponibili(utenti) {
   const emailsUsate = new Set(registroAssegnati.map(r => r.email?.toLowerCase()));
   return utenti.filter(u => !emailsUsate.has(u.email?.toLowerCase()));
