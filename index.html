@@ -190,9 +190,50 @@ async function caricaRegistro() {
   }
 }
   
-function filtraUtentiDisponibili(utenti) {
-  const emailsUsate = new Set(registroAssegnati.map(r => r.email?.toLowerCase()));
-  return utenti.filter(u => !emailsUsate.has(u.email?.toLowerCase()));
+function normalizza(v) {
+  return (v || '').trim().toLowerCase();
+}
+
+function chiaveUtente(u) {
+  return normalizza(u.email) || normalizza(u.matricola) || normalizza(u.nome);
+}
+
+function chiaveRegistro(r) {
+  return normalizza(r.email) || normalizza(r.matricola) || normalizza(r.nome);
+}
+
+function modelloNorm(m) {
+  return normalizza(m)
+    .replace(/\s+/g, ' ')
+    .replace('samsung ', '')
+    .trim();
+}
+
+function costruisciStatoRegistro() {
+  const stato = {};
+  registroAssegnati.forEach(r => {
+    const key = chiaveRegistro(r);
+    const mod = modelloNorm(r.modello || r.modello_assegnato || '');
+    if (!key || !mod) return;
+    if (!stato[key]) stato[key] = {};
+    stato[key][mod] = (stato[key][mod] || 0) + 1;
+  });
+  return stato;
+}
+
+function filtraUtentiDisponibili(lista) {
+  const stato = costruisciStatoRegistro();
+
+  return lista.filter(u => {
+    const key = chiaveUtente(u);
+    if (!key) return true;
+
+    const modRichiesto = modelloNorm(u.modello_nuovo || u.modello || '');
+    if (!modRichiesto) return true;
+
+    const assegnazioni = (stato[key] && stato[key][modRichiesto]) ? stato[key][modRichiesto] : 0;
+    return assegnazioni === 0;
+  });
 }
 
 function filtraImeiDisponibili(imeiList) {
