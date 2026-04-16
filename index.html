@@ -160,21 +160,26 @@ let ultimaAggiornamento = localStorage.getItem('ultimaAggiornamento') || '';
 
 async function caricaRegistro() {
   const ora = new Date();
-  const unGiornoFa = new Date(ora.getTime() - 24*60*60*1000);
-  if (ultimaAggiornamento && new Date(ultimaAggiornamento) > unGiornoFa) {
+  const unGiornoFa = new Date(ora.getTime() - 24 * 60 * 60 * 1000);
+  const cacheRegistro = localStorage.getItem('registroAssegnati');
+  const cacheUltima = localStorage.getItem('ultimaAggiornamento');
+
+  if (cacheUltima && new Date(cacheUltima) > unGiornoFa && cacheRegistro) {
     console.log('Cache registro OK');
+    registroAssegnati = JSON.parse(cacheRegistro);
     return;
   }
-  
+
   try {
     const response = await fetch('https://script.google.com/macros/s/AKfycbxZYTJgPe-JscmnwYVns6hJQMQEwrRDU6nC_b2omvecM-tv7gI00jTlk1pFJMQWo7HO/exec?action=getRegistro');
     const data = await response.json();
-    registroAssegnati = data;
-    localStorage.setItem('registroAssegnati', JSON.stringify(data));
+    registroAssegnati = data || [];
+    localStorage.setItem('registroAssegnati', JSON.stringify(registroAssegnati));
     localStorage.setItem('ultimaAggiornamento', ora.toISOString());
-    console.log('Registro aggiornato:', data.length, 'record');
-  } catch(e) {
+    console.log('Registro aggiornato:', registroAssegnati.length, 'record');
+  } catch (e) {
     console.log('Errore caricamento registro, uso cache');
+    registroAssegnati = cacheRegistro ? JSON.parse(cacheRegistro) : [];
   }
 }
 
@@ -346,7 +351,7 @@ function aggiornaDatiDaDrive(){
   localStorage.removeItem('cache_timestamp');
   localStorage.removeItem('registroAssegnati');
   registroAssegnati = [];
-  await caricaDatiDaDrive();
+  caricaDatiDaDrive();
 }
 
 const inputNome=document.getElementById('input-nome'),dropdownNome=document.getElementById('dropdown-nome');
