@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Modulo Assegnazione Device</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+  :root{--blue:#004B93;--blue-light:#e8f0fa;--blue-mid:#c0d4ef;--accent:#0072CE;--green:#007A47;--green-light:#e8f5ee;--red:#C41230;--red-light:#fdecea;--gray-1:#f4f6f9;--gray-2:#e8ecf2;--gray-3:#b0b8c7;--gray-4:#6b7a90;--text:#1a2535;--border:#d0d8e8;--white:#ffffff;--shadow:0 2px 12px rgba(0,75,147,0.10);--radius:10px;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'IBM Plex Sans',sans-serif;background:var(--gray-1);color:var(--text);min-height:100vh;padding:0 0 40px 0;}
+  .header{background:var(--white);border-bottom:3px solid var(--blue);padding:18px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,75,147,0.08);}
+  .header img{height:44px;}
+  .header-title{font-size:15px;font-weight:600;color:var(--blue);letter-spacing:0.04em;text-transform:uppercase;}
+  .header-date{font-size:12px;color:var(--gray-4);font-family:'IBM Plex Mono',monospace;}
+  .container{max-width:820px;margin:32px auto;padding:0 16px;}
+  .card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:20px;overflow:visible;}
+  .card-header{background:var(--blue);color:white;padding:14px 24px;font-size:13px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border-radius:var(--radius) var(--radius) 0 0;display:flex;align-items:center;gap:8px;}
+  .card-body{padding:24px;}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+  .form-row.full{grid-template-columns:1fr;}
+  .field{display:flex;flex-direction:column;gap:6px;position:relative;}
+  .field label{font-size:11px;font-weight:600;color:var(--gray-4);letter-spacing:0.07em;text-transform:uppercase;}
+  .field label span.req{color:var(--red);margin-left:2px;}
+  input[type="text"],select{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:7px;font-family:'IBM Plex Sans',sans-serif;font-size:14px;color:var(--text);background:var(--white);transition:border-color .15s,box-shadow .15s;outline:none;appearance:none;}
+  input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,114,206,0.13);}
+  input[readonly]{background:var(--gray-1);color:var(--gray-4);border-color:var(--gray-2);cursor:not-allowed;}
+  input[readonly]:focus{box-shadow:none;border-color:var(--gray-2);}
+  .autocomplete-wrap{position:relative;}
+  .autocomplete-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1.5px solid var(--accent);border-radius:8px;box-shadow:0 8px 24px rgba(0,75,147,0.14);z-index:200;max-height:240px;overflow-y:auto;display:none;}
+  .autocomplete-dropdown.open{display:block;}
+  .autocomplete-item{padding:11px 16px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--gray-2);transition:background .1s;display:flex;flex-direction:column;gap:2px;}
+  .autocomplete-item:last-child{border-bottom:none;}
+  .autocomplete-item:hover{background:var(--blue-light);}
+  .autocomplete-item .item-name{font-weight:600;color:var(--text);}
+  .autocomplete-item .item-sub{font-size:11px;color:var(--gray-4);font-family:'IBM Plex Mono',monospace;}
+  .no-results{padding:12px 16px;font-size:13px;color:var(--gray-4);font-style:italic;}
+  .radio-group{display:flex;gap:12px;flex-wrap:wrap;}
+  .radio-btn{flex:1;min-width:140px;position:relative;}
+  .radio-btn input[type="radio"]{position:absolute;opacity:0;width:0;height:0;}
+  .radio-btn label{display:flex;align-items:center;gap:10px;padding:13px 18px;border:2px solid var(--border);border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;color:var(--text);transition:all .15s;text-transform:none;letter-spacing:0;background:var(--white);}
+  .radio-btn input:checked+label{border-color:var(--accent);background:var(--blue-light);color:var(--blue);}
+  .radio-btn input:disabled+label{opacity:0.35;cursor:not-allowed;background:var(--gray-1);}
+  .radio-btn label::before{content:'';width:18px;height:18px;border-radius:50%;border:2px solid var(--gray-3);flex-shrink:0;transition:all .15s;}
+  .radio-btn input:checked+label::before{border-color:var(--accent);background:var(--accent);box-shadow:inset 0 0 0 3px white;}
+  .lettera{background:var(--gray-1);border-left:3px solid var(--blue-mid);border-radius:6px;padding:14px 18px;font-size:13px;color:var(--gray-4);line-height:1.65;font-style:italic;}
+  .filled-badge{display:inline-flex;align-items:center;gap:5px;background:var(--green-light);color:var(--green);border:1px solid #a3d4b8;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:600;}
+  .firma-wrap{position:relative;border:2px dashed var(--border);border-radius:10px;background:var(--gray-1);overflow:hidden;transition:border-color .2s;touch-action:none;}
+  .firma-wrap.has-firma{border-style:solid;border-color:var(--green);background:white;}
+  .firma-wrap.active{border-color:var(--accent);}
+  #firma-canvas{display:block;width:100%;height:160px;cursor:crosshair;touch-action:none;}
+  .firma-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;pointer-events:none;}
+  .firma-placeholder span{font-size:13px;color:var(--gray-3);font-style:italic;}
+  .firma-wrap.has-firma .firma-placeholder{opacity:0;}
+  .firma-actions{display:flex;justify-content:flex-end;margin-top:8px;}
+  .btn-clear-firma{background:transparent;color:var(--red);border:1.5px solid var(--red);border-radius:6px;padding:6px 14px;font-family:'IBM Plex Sans',sans-serif;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;opacity:0;pointer-events:none;transition:opacity .2s;}
+  .send-section{display:flex;flex-direction:column;align-items:center;gap:14px;padding:20px 0 0 0;}
+  .btn-send{background:var(--blue);color:white;border:none;border-radius:8px;padding:15px 48px;font-family:'IBM Plex Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:10px;box-shadow:0 3px 10px rgba(0,75,147,0.22);}
+  .btn-send:disabled{background:var(--gray-3);box-shadow:none;cursor:not-allowed;}
+  .send-hint{font-size:12px;color:var(--gray-4);text-align:center;}
+  .success-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:500;align-items:center;justify-content:center;padding:20px;}
+  .success-overlay.show{display:flex;}
+  .success-box{background:white;border-radius:16px;padding:40px 36px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.2);}
+  .success-icon{width:64px;height:64px;background:var(--green-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;}
+  .success-box h2{font-size:20px;color:var(--green);margin-bottom:10px;}
+  .success-box p{font-size:14px;color:var(--gray-4);line-height:1.6;margin-bottom:6px;}
+  .btn-close-success{margin-top:24px;background:var(--blue);color:white;border:none;border-radius:8px;padding:12px 32px;font-family:'IBM Plex Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+  .btn-reset{background:transparent;color:var(--gray-4);border:1.5px solid var(--gray-2);border-radius:7px;padding:9px 20px;font-family:'IBM Plex Sans',sans-serif;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:7px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @media(max-width:600px){.header{padding:14px 16px;}.container{margin:16px auto;}.card-body{padding:16px;}.form-row{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="header">
+  <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 50'%3E%3Crect width='100' height='50' fill='%23004B93'/%3E%3C/svg%3E" alt="Logo">
+  <div style="flex:1;padding-left:20px;">
+    <div class="header-title">Assegnazione Device</div>
+  </div>
+  <div class="header-date" id="header-date"></div>
+</div>
+
+<div class="container">
+  <div class="card">
+    <div class="card-header">Seleziona Assegnatario</div>
+    <div class="card-body">
+      <div class="form-row">
+        <div class="field">
+          <label>Nome Assegnatario <span class="req">*</span></label>
+          <div class="autocomplete-wrap">
+            <input type="text" id="input-nome" placeholder="Cerca nome...">
+            <div id="autocomplete-utenti" class="autocomplete-dropdown"></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="text" id="input-email" readonly>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Matricola</label>
+          <input type="text" id="input-matricola" readonly>
+        </div>
+        <div class="field">
+          <label>Società</label>
+          <input type="text" id="input-societa" readonly>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">Seleziona Device</div>
+    <div class="card-body">
+      <div class="form-row">
+        <div class="field">
+          <label>Numero di Serie / IMEI <span class="req">*</span></label>
+          <div class="autocomplete-wrap">
+            <input type="text" id="input-imei" placeholder="Cerca IMEI...">
+            <div id="autocomplete-device" class="autocomplete-dropdown"></div>
+          </div>
+        </div>
+      </div>
+      <div id="card-riepilogo" class="card" style="display:none;margin:0;margin-top:16px;box-shadow:none;border-color:#e0e0e0;">
+        <div class="card-body" style="padding:12px;">
+          <div class="form-row" style="margin-bottom:0;">
+            <div class="field" style="gap:3px;"><label style="font-size:10px;">Modello</label><div id="riepilogo-modello" style="font-weight:600;color:var(--blue);">—</div></div>
+            <div class="field" style="gap:3px;"><label style="font-size:10px;">IMEI</label><div id="riepilogo-imei" style="font-weight:600;color:var(--blue);">—</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">Firma Digitale</div>
+    <div class="card-body">
+      <label style="font-size:11px;font-weight:600;color:var(--gray-4);letter-spacing:0.07em;text-transform:uppercase;display:block;margin-bottom:12px;">Firma dell'assegnatario <span style="color:var(--red);">*</span></label>
+      <div id="firma-wrap" class="firma-wrap">
+        <canvas id="firma-canvas"></canvas>
+        <div class="firma-placeholder"><span id="firma-status">ℹ️ La firma è obbligatoria prima dell'invio</span></div>
+      </div>
+      <div class="firma-actions">
+        <button id="btn-clear-firma" onclick="clearFirma()" style="border-radius:6px;"><svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M12 4v16m8-8H4"/></svg> Cancella</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div id="status-badge" style="margin-bottom:16px;"></div>
+      <div id="drive-upload-result" style="margin-bottom:16px;font-size:13px;"></div>
+      <div class="send-section">
+        <button id="btn-invia" class="btn-send" onclick="inviaModulo()" disabled>
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 3v18m9-9H3"/></svg> Invia Modulo
+        </button>
+        <p class="send-hint">Completa il form per generare il PDF e inviarlo</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="success-overlay" class="success-overlay">
+  <div class="success-box">
+    <div class="success-icon">
+      <svg width="32" height="32" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+    </div>
+    <h2>Modulo Inviato</h2>
+    <p id="success-msg"></p>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button id="btn-invia-email" onclick="inviaEmail()" class="btn-send" style="flex:1;margin:0;padding:12px 20px;font-size:14px;">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg> Invia email
+      </button>
+      <button id="btn-nuovo-modulo" onclick="chiudiSuccesso()" class="btn-reset" style="flex:1;">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Nuovo modulo
+      </button>
+    </div>
+    <button onclick="chiudiSuccesso()" class="btn-close-success">Chiudi</button>
+  </div>
+</div>
+
+<script>
+const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbxZYTJgPe-JscmnwYVns6hJQMQEwrRDU6nC_b2omvecM-tv7gI00jTlk1pFJMQWo7HO/exec';
+const EMAIL_SUPPORT='support@a2a.it';
+let USERS=[],DEVICES=[],selectedUser=null,selectedIMEI=null,selectedModello=null,oggi=new Date(),firmaVuota=true;
+let assegnatiLocali={nomi:new Set(),numeroSerie:new Set()};
+const inputNome=document.getElementById('input-nome'),inputIMEI=document.getElementById('input-imei'),dropdownUtenti=document.getElementById('autocomplete-utenti'),dropdownIMEI=document.getElementById('autocomplete-device');
+
+function updateDateDisplay(){
+  const d=new Date();
+  document.getElementById('header-date').textContent=d.toLocaleDateString('it-IT',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+
+async function caricaRegistroAssegnazioni(){
+  try{
+    const response=await fetch(APPS_SCRIPT_URL+'?action=getRegistro');
+    const result=await response.json();
+    if(result.rows&&result.rows.length>0){
+      result.rows.forEach(row=>{
+        if(row.nome) assegnatiLocali.nomi.add(row.nome.toLowerCase());
+        if(row.numero_serie) assegnatiLocali.numeroSerie.add(row.numero_serie);
+      });
+      localStorage.setItem('assegnatiLocali',JSON.stringify({nomi:Array.from(assegnatiLocali.nomi),numeroSerie:Array.from(assegnatiLocali.numeroSerie)}));
+    }
+  }catch(err){
+    console.error('Errore caricamento registro:',err);
+  }
+}
+
+function caricaAssegnatiDaStorage(){
+  const stored=localStorage.getItem('assegnatiLocali');
+  if(stored){
+    const data=JSON.parse(stored);
+    assegnatiLocali.nomi=new Set(data.nomi||[]);
+    assegnatiLocali.numeroSerie=new Set(data.numeroSerie||[]);
+  }
+}
+
+function initForm(){
+  USERS=[{id:1,nome:'Mario Rossi',email:'mario.rossi@a2a.it',matricola:'12345',societa:'A2A'},{id:2,nome:'Anna Bianchi',email:'anna.bianchi@a2a.it',matricola:'12346',societa:'A2A'},{id:3,nome:'Luca Verdi',email:'luca.verdi@a2a.it',matricola:'12347',societa:'A2A'}];
+  DEVICES=[{imei:'353632423426793',modello:'Samsung A56'},{imei:'354892874529873',modello:'Samsung A55'},{imei:'358904729384729',modello:'iPhone 15'}];
+  
+  inputNome.addEventListener('input',()=>{
+    const val=inputNome.value.toLowerCase().trim();
+    if(!val){dropdownUtenti.classList.remove('open');return;}
+    const filtered=USERS.filter(u=>{
+      const match=u.nome.toLowerCase().includes(val)||u.matricola.includes(val);
+      const nonAssegnato=!assegnatiLocali.nomi.has(u.nome.toLowerCase());
+      return match&&nonAssegnato;
+    });
+    if(filtered.length===0){
+      dropdownUtenti.innerHTML='<div class="no-results">Nessun utente disponibile</div>';
+      dropdownUtenti.classList.add('open');
+      return;
+    }
+    dropdownUtenti.innerHTML=filtered.map(u=>`<div class="autocomplete-item" data-id="${u.id}"><div class="item-name">${u.nome}</div><div class="item-sub">${u.matricola} • ${u.email}</div></div>`).join('');
+    dropdownUtenti.classList.add('open');
+    document.querySelectorAll('#autocomplete-utenti .autocomplete-item').forEach(item=>{
+      item.addEventListener('click',()=>{
+        selectedUser=filtered[Array.from(item.parentNode.children).indexOf(item)];
+        inputNome.value=selectedUser.nome;
+        dropdownUtenti.classList.remove('open');
+        document.getElementById('input-email').value=selectedUser.email;
+        document.getElementById('input-matricola').value=selectedUser.matricola;
+        document.getElementById('input-societa').value=selectedUser.societa;
+        checkFormValid();
+      });
+    });
+  });
+
+  inputIMEI.addEventListener('input',()=>{
+    const val=inputIMEI.value.trim();
+    if(!val){dropdownIMEI.classList.remove('open');return;}
+    const filtered=DEVICES.filter(d=>{
+      const match=d.imei.includes(val)||d.modello.toLowerCase().includes(val.toLowerCase());
+      const nonAssegnato=!assegnatiLocali.numeroSerie.has(d.imei);
+      return match&&nonAssegnato;
+    });
+    if(filtered.length===0){
+      dropdownIMEI.innerHTML='<div class="no-results">Nessun device disponibile</div>';
+      dropdownIMEI.classList.add('open');
+      return;
+    }
+    dropdownIMEI.innerHTML=filtered.map(d=>`<div class="autocomplete-item" data-imei="${d.imei}"><div class="item-name">${d.modello}</div><div class="item-sub">${d.imei}</div></div>`).join('');
+    dropdownIMEI.classList.add('open');
+    document.querySelectorAll('#autocomplete-device .autocomplete-item').forEach((item,idx)=>{
+      item.addEventListener('click',()=>{
+        selectedIMEI=filtered[idx].imei;
+        selectedModello=filtered[idx].modello;
+        inputIMEI.value=selectedIMEI;
+        dropdownIMEI.classList.remove('open');
+        document.getElementById('riepilogo-modello').textContent=selectedModello;
+        document.getElementById('riepilogo-imei').textContent=selectedIMEI;
+        updateRiepilogo();
+        checkFormValid();
+      });
+    });
+  });
+
+  document.addEventListener('click',e=>{
+    if(!e.target.closest('.autocomplete-wrap')){dropdownUtenti.classList.remove('open');dropdownIMEI.classList.remove('open');}
+  });
+}
+
+function clearUserFields(){
+  document.getElementById('input-email').value='';
+  document.getElementById('input-matricola').value='';
+  document.getElementById('input-societa').value='';
+}
+
+function updateRiepilogo(){
+  document.getElementById('card-riepilogo').style.display=(selectedModello||inputIMEI.value.trim())?'block':'none';
+  if(inputIMEI.value.trim()&&!selectedIMEI) document.getElementById('riepilogo-imei').innerHTML=`<span style="color:var(--gray-3);font-style:italic;">${inputIMEI.value.trim()}</span>`;
+}
+
+const firmaCanvas=document.getElementById('firma-canvas'),firmaWrap=document.getElementById('firma-wrap');
+const ctx=firmaCanvas.getContext('2d');
+let isDrawing=false,lastX=0,lastY=0;
+function resizeCanvas(){
+  const rect=firmaCanvas.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+  firmaCanvas.width=rect.width*dpr;firmaCanvas.height=rect.height*dpr;
+  ctx.scale(dpr,dpr);ctx.strokeStyle='#1a2535';ctx.lineWidth=2.2;ctx.lineCap='round';ctx.lineJoin='round';
+}
+function getPos(e){const rect=firmaCanvas.getBoundingClientRect();if(e.touches)return{x:e.touches[0].clientX-rect.left,y:e.touches[0].clientY-rect.top};return{x:e.clientX-rect.left,y:e.clientY-rect.top};}
+function startDraw(e){e.preventDefault();isDrawing=true;firmaWrap.classList.add('active');const p=getPos(e);lastX=p.x;lastY=p.y;}
+function draw(e){
+  if(!isDrawing)return;e.preventDefault();const p=getPos(e);
+  ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(p.x,p.y);ctx.stroke();lastX=p.x;lastY=p.y;
+  if(firmaVuota){
+    firmaVuota=false;firmaWrap.classList.add('has-firma');
+    const btn=document.getElementById('btn-clear-firma');btn.style.opacity='1';btn.style.pointerEvents='auto';
+    const fs=document.getElementById('firma-status');fs.style.color='var(--green)';fs.innerHTML='<svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg> Firma acquisita';
+    checkFormValid();
+  }
+}
+function endDraw(){isDrawing=false;firmaWrap.classList.remove('active');}
+firmaCanvas.addEventListener('mousedown',startDraw);firmaCanvas.addEventListener('mousemove',draw);firmaCanvas.addEventListener('mouseup',endDraw);firmaCanvas.addEventListener('mouseleave',endDraw);
+firmaCanvas.addEventListener('touchstart',startDraw,{passive:false});firmaCanvas.addEventListener('touchmove',draw,{passive:false});firmaCanvas.addEventListener('touchend',endDraw);
+window.addEventListener('resize',resizeCanvas);resizeCanvas();
+
+function clearFirma(){
+  const dpr=window.devicePixelRatio||1;ctx.clearRect(0,0,firmaCanvas.width/dpr,firmaCanvas.height/dpr);
+  firmaVuota=true;firmaWrap.classList.remove('has-firma');
+  const btn=document.getElementById('btn-clear-firma');btn.style.opacity='0';btn.style.pointerEvents='none';
+  const fs=document.getElementById('firma-status');fs.style.color='var(--gray-3)';
+  fs.innerHTML='<svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg> La firma è obbligatoria prima dell\'invio';
+  checkFormValid();
+}
+
+function checkFormValid(){
+  const ok=selectedUser&&selectedModello&&(selectedIMEI||inputIMEI.value.trim().length>=15)&&!firmaVuota;
+  document.getElementById('btn-invia').disabled=!ok;
+  document.getElementById('status-badge').innerHTML=ok?'<span class="filled-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="12" height="12"><path d="M5 13l4 4L19 7"/></svg>Pronto</span>':'';
+}
+
+async function uploadToDrive(pdfBlob,filename){
+  const el=document.getElementById('drive-upload-result');
+  if(el)el.innerHTML='<span style="color:var(--gray-4)">&#9203; Salvataggio PDF su Drive...</span>';
+  try{
+    const buf=await pdfBlob.arrayBuffer(),bytes=new Uint8Array(buf);
+    let bin='';bytes.forEach(b=>bin+=String.fromCharCode(b));
+    await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({pdf:btoa(bin),filename})});
+    if(el)el.innerHTML='<span style="color:var(--green)">&#10003; PDF salvato su Drive</span>';
+  }catch(err){if(el)el.innerHTML=`<span style="color:var(--red)">&#10006; Errore Drive: ${err.message}</span>`;}
+}
+
+async function inviaModulo(){
+  const nome=selectedUser.nome,email=selectedUser.email,modello=selectedModello;
+  const imei=selectedIMEI||inputIMEI.value.trim(),matricola=selectedUser.matricola,societa=selectedUser.societa;
+  const data=oggi.toLocaleDateString('it-IT');
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const PW=210,mL=20,mR=20,cW=170;
+  doc.setFont('helvetica','normal');
+  doc.addImage('data:image/png;base64,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','PNG',mL,15,30,10);\n  doc.setFontSize(16);doc.text('MODULO ASSEGNAZIONE DEVICE',PW/2,32,{align:'center'});\n  let y=42;const col1=60,col2=cW-col1,rH=9;\n  [['Nome e Cognome',nome],['CID',matricola],['Società di appartenenza',societa]].forEach(row=>{\n    doc.setDrawColor(0,0,0);doc.setLineWidth(0.3);\n    doc.rect(mL,y,col1,rH,'S');doc.rect(mL+col1,y,col2,rH,'S');\n    doc.setFontSize(9.5);doc.text(row[0],mL+2,y+6.2);doc.text(row[1],mL+col1+3,y+6.2);y+=rH;\n  });\n  y+=8;doc.setFontSize(9.5);doc.text('Gentile Collega,',mL,y);y+=5;\n  const bl=doc.splitTextToSize('In relazione alle esigenze operative connesse alle mansioni affidatele, le consegniamo i beni aziendali di seguito elencati, necessari allo svolgimento della sua attività lavorativa:',cW);\n  doc.text(bl,mL,y);y+=bl.length*5+5;\n  doc.setFillColor(210,210,210);doc.setDrawColor(0,0,0);doc.setLineWidth(0.3);doc.rect(mL,y,cW,10,'FD');\n  doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text('Elenco Asset',PW/2,y+7.2,{align:'center'});y+=10;\n  const cols=[{l:'Categoria\\nModello',w:36},{l:'Modello',w:28},{l:'S.N./IMEI/ICCID',w:38},{l:'Numero di\\nTelefono',w:22},{l:'Hostname',w:22},{l:'Fornitore',w:cW-146}];\n  let xc=mL;\n  cols.forEach(col=>{\n    doc.setDrawColor(0,0,0);doc.setLineWidth(0.3);doc.rect(xc,y,col.w,12,'S');\n    doc.setFont('helvetica','bold');doc.setFontSize(8);\n    const ls=col.l.split('\\n');\n    if(ls.length===2){doc.text(ls[0],xc+col.w/2,y+4.5,{align:'center'});doc.text(ls[1],xc+col.w/2,y+9.2,{align:'center'});}\n    else doc.text(ls[0],xc+col.w/2,y+7,{align:'center'});\n    xc+=col.w;\n  });y+=12;\n  const dH=14,rowVals=['Dispositivo di\\ncomunicazione',modello,imei,'','','Vodafone'];\n  rowVals.forEach((val,ci)=>{\n    const xPos=cols.slice(0,ci).reduce((s,c)=>s+c.w,mL);\n    doc.setDrawColor(0,0,0);doc.setLineWidth(0.3);doc.rect(xPos,y,cols[ci].w,dH,'S');\n    doc.setFont('helvetica','normal');doc.setFontSize(8.5);\n    const ls2=val.split('\\n');\n    if(ls2.length===2){doc.text(ls2[0],xPos+2,y+5);doc.text(ls2[1],xPos+2,y+10);}\n    else doc.text(val,xPos+2,y+dH/2+2);\n  });y+=dH+10;\n  doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.text('Con i migliori saluti',mL,y);y+=5;\n  doc.setFont('helvetica','bold');doc.text('ICT A2A',mL,y);y+=16;\n  doc.setFont('helvetica','bold');doc.setFontSize(11);doc.text('Data',mL,y);doc.text(\"Firma dell'assegnatario\",PW-mR,y,{align:'right'});y+=5;\n  doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(data,mL,y+1);\n  const fW=70,fH=28,fX=PW-mR-fW;\n  doc.addImage(firmaCanvas.toDataURL('image/png'),'PNG',fX,y,fW,fH);\n  doc.setDrawColor(0,0,0);doc.setLineWidth(0.3);doc.line(fX,y+fH,fX+fW,y+fH);\n  const np=nome.replace(/[^a-zA-Z0-9]/g,'_');\n  const fn=`Modulo_Assegnazione_${np}_${data.replace(/\\//g,'-')}.pdf`;\n  doc.save(fn);\n  const _logData={nome,matricola,email,modello,imei,dataOggi:data,filename:fn};\n  window._registroData=_logData;\n  window._emailAperta=false;\n  \n  assegnatiLocali.nomi.add(nome.toLowerCase());\n  assegnatiLocali.numeroSerie.add(imei);\n  localStorage.setItem('assegnatiLocali',JSON.stringify({nomi:Array.from(assegnatiLocali.nomi),numeroSerie:Array.from(assegnatiLocali.numeroSerie)}));\n  \n  uploadToDrive(doc.output('blob'),fn);\n  window._mailtoData={\n    sogg:encodeURIComponent('Modulo Assegnazione - '+email),\n    corpo:encodeURIComponent('Gentile Utente,\\n\\nIn allegato il modulo di assegnazione del dispositivo aziendale.\\n\\nAssegnatario: '+nome+'\\nMatricola: '+matricola+'\\nModello: '+modello+'\\nIMEI: '+imei+'\\nData: '+data+'\\n\\nTeam Supporto Rinnovo Smartphone'),\n  };\n  window._registroData={nome,matricola,email,modello,imei,dataOggi:data,filename:fn};\n  const btnE=document.getElementById('btn-invia-email');\n  if(btnE){btnE.disabled=false;btnE.style.background='var(--accent)';btnE.innerHTML='<svg width=\"16\" height=\"16\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z\"/><polyline points=\"22,6 12,12 2,6\"/></svg> Invia email';}\n  const btnN=document.getElementById('btn-nuovo-modulo');\n  if(btnN){btnN.disabled=true;btnN.style.cssText='background:var(--gray-2);color:var(--gray-3);border:1.5px solid var(--gray-2);border-radius:8px;padding:13px 24px;font-family:\\'IBM Plex Sans\\',sans-serif;font-size:14px;font-weight:600;cursor:not-allowed;display:flex;align-items:center;gap:8px;';}\n  document.getElementById('success-msg').innerHTML='Modulo compilato per <strong>'+nome+'</strong><br>Modello: <strong>'+modello+'</strong> &middot; IMEI: <strong>'+imei+'</strong>';\n  document.getElementById('success-overlay').classList.add('show');\n}\n\nasync function salvaRigaRegistro(logData){\n  const orario = new Date().toLocaleString('it-IT');\n  try{\n    await fetch(APPS_SCRIPT_URL, {\n      method: 'POST',\n      mode: 'no-cors',\n      headers: {'Content-Type': 'application/json'},\n      body: JSON.stringify({\n        soloRegistro: true,\n        nome: logData.nome,\n        matricola: logData.matricola,\n        email: logData.email,\n        modello: logData.modello,\n        numeroSerie: logData.imei,\n        filename: logData.filename,\n        dataOggi: logData.dataOggi,\n        orario: orario\n      })\n    });\n    console.log('Registro inviato, orario:', orario);\n  }catch(err){\n    console.error('Errore salvaRigaRegistro:', err);\n  }\n}\n\nfunction inviaEmail(){\n  if(window._mailtoData){\n    const a=document.createElement('a');\n    a.href='mailto:'+EMAIL_SUPPORT+'?subject='+window._mailtoData.sogg+'&body='+window._mailtoData.corpo;\n    a.click();\n    if(window._registroData) salvaRigaRegistro(window._registroData);\n    window._registroData=null;\n    const btnEmail=document.getElementById('btn-invia-email');\n    if(btnEmail){\n      btnEmail.innerHTML='<svg width=\"16\" height=\"16\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M5 13l4 4L19 7\"/></svg> Email inviata';\n      btnEmail.style.background='var(--green)';\n      btnEmail.disabled=true;\n    }\n    const btnNuovo=document.getElementById('btn-nuovo-modulo');\n    if(btnNuovo){\n      btnNuovo.disabled=false;\n      btnNuovo.style.cssText=\"background:var(--gray-1);color:var(--text);border:1.5px solid var(--gray-2);border-radius:8px;padding:13px 24px;font-family:'IBM Plex Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;\";\n    }\n  }\n}\n\nfunction chiudiSuccesso(){\n  window._registroData=null;\n  document.getElementById('success-overlay').classList.remove('show');\n  resetForm();\n}\nfunction resetForm(){\n  selectedUser=null;selectedIMEI=null;selectedModello=null;\n  inputNome.value='';inputIMEI.value='';\n  clearUserFields();\n  document.getElementById('riepilogo-modello').textContent='—';\n  document.getElementById('riepilogo-imei').textContent='—';\n  document.getElementById('card-riepilogo').style.display='none';\n  document.getElementById('status-badge').innerHTML='';\n  document.getElementById('drive-upload-result').innerHTML='';\n  clearFirma();checkFormValid();\n}\n\nwindow.addEventListener('load',async ()=>{\n  await caricaRegistroAssegnazioni();\n  caricaAssegnatiDaStorage();\n  initForm();\n  updateDateDisplay();\n});\n</script>\n</body>\n</html>
