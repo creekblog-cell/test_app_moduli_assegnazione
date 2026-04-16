@@ -345,7 +345,8 @@ function aggiornaDatiDaDrive(){
   localStorage.removeItem('cache_imei');
   localStorage.removeItem('cache_timestamp');
   localStorage.removeItem('registroAssegnati');
-  caricaDatiDaDrive();
+  registroAssegnati = [];
+  await caricaDatiDaDrive();
 }
 
 const inputNome=document.getElementById('input-nome'),dropdownNome=document.getElementById('dropdown-nome');
