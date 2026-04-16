@@ -153,6 +153,42 @@
 <script>
 const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbxZYTJgPe-JscmnwYVns6hJQMQEwrRDU6nC_b2omvecM-tv7gI00jTlk1pFJMQWo7HO/exec';
 const EMAIL_SUPPORT='supporto.rinnovosmartphone@a2a.it';
+// === AGGIUNGI QUESTO BLOCCO COMPLETO ===
+// Cache e filtri locali per velocità
+let registroAssegnati = JSON.parse(localStorage.getItem('registroAssegnati') || '[]');
+let ultimaAggiornamento = localStorage.getItem('ultimaAggiornamento') || '';
+
+async function caricaRegistro() {
+  const ora = new Date();
+  const unGiornoFa = new Date(ora.getTime() - 24*60*60*1000);
+  if (ultimaAggiornamento && new Date(ultimaAggiornamento) > unGiornoFa) {
+    console.log('Cache registro OK');
+    return;
+  }
+  
+  try {
+    const response = await fetch('https://script.google.com/macros/s/AKfycbxZYTJgPe-JscmnwYVns6hJQMQEwrRDU6nC_b2omvecM-tv7gI00jTlk1pFJMQWo7HO/exec?action=getRegistro');
+    const data = await response.json();
+    registroAssegnati = data;
+    localStorage.setItem('registroAssegnati', JSON.stringify(data));
+    localStorage.setItem('ultimaAggiornamento', ora.toISOString());
+    console.log('Registro aggiornato:', data.length, 'record');
+  } catch(e) {
+    console.log('Errore caricamento registro, uso cache');
+  }
+}
+
+function filtraUtentiDisponibili(utenti) {
+  const emailsUsate = new Set(registroAssegnati.map(r => r.email?.toLowerCase()));
+  return utenti.filter(u => !emailsUsate.has(u.email?.toLowerCase()));
+}
+
+function filtraImeiDisponibili(imeiList) {
+  const serieUsate = new Set(registroAssegnati.map(r => r.numero_serie));
+  return imeiList.filter(imei => !serieUsate.has(imei));
+}
+
+// === FINE BLOCCO ===
 let UTENTI=[],IMEI_PER_MODELLO={'Samsung A56':[],'Samsung Xcover 7':[]};
 let selectedUser=null,selectedIMEI=null,selectedModello=null,firmaVuota=true;
 const oggi=new Date();
@@ -220,6 +256,7 @@ async function caricaDatiDaDrive(){
     if(el){el.style.cssText='display:flex;align-items:center;gap:10px;background:var(--blue-light);border:1px solid var(--blue-mid);border-radius:8px;padding:12px 18px;margin-bottom:16px;font-size:13px;color:var(--blue);';
       el.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite;flex-shrink:0"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Caricamento utenti e IMEI da Drive...';}
 
+    await caricaRegistro();
     const rU=await fetchT('https://raw.githubusercontent.com/supportorinnovosmartphone-sys/modulo/main/utenti.csv');
     const jU=await rU.text();
     if(jU){
@@ -228,22 +265,34 @@ async function caricaDatiDaDrive(){
         societa:r.societa||r.societa_di_appartenenza||'',
         modello_nuovo:r.modello_nuovo||''
       })).filter(u=>u.nome);
+      UTENTI = filtraUtentiDisponibili(UTENTI);
       localStorage.setItem(CACHE_KEY_UTENTI, JSON.stringify(UTENTI));
     } else throw new Error('Errore caricamento utenti');
 
-    const rI=await fetchT('https://raw.githubusercontent.com/supportorinnovosmartphone-sys/modulo/main/imei.csv');
-    const jI=await rI.text();
-    if(jI){
-      const imeiRows=parseCSV(jI).map(r=>({imei:(r.imei||'').trim(),modello:(r.modello||'')})).filter(r=>r.imei);
-      IMEI_PER_MODELLO={'Samsung A56':[],'Samsung Xcover 7':[]};
-      imeiRows.forEach(r=>{
-        const mod=r.modello.toLowerCase();
-        if(mod.includes('a56')) IMEI_PER_MODELLO['Samsung A56'].push(r.imei);
-        else if(mod.includes('xcover')) IMEI_PER_MODELLO['Samsung Xcover 7'].push(r.imei);
-      });
-      localStorage.setItem(CACHE_KEY_IMEI, JSON.stringify(imeiRows));
-      localStorage.setItem(CACHE_KEY_TIME, now.toString());
-    } else throw new Error('Errore caricamento IMEI');
+    const rI = await fetchT('https://raw.githubusercontent.com/supportorinnovosmartphone-sys/modulo/main/imei.csv');
+const jI = await rI.text();
+if(jI){
+  const imeiRows = parseCSV(jI).map(r=>({
+    imei:(r.imei||'').trim(),  // ← cambia in numero_serie più avanti
+    modello:(r.modello||'')
+  })).filter(r=>r.imei);
+  
+  // ← AGGIUNGI IL FILTRO:
+  const imeiRowsFiltrati = imeiRows.map(r => ({
+    imei: r.imei,
+    modello: r.modello
+  })).filter(r => !registroAssegnati.some(reg => reg.numero_serie === r.imei));
+  
+  IMEI_PER_MODELLO = {'Samsung A56':[],'Samsung Xcover 7':[]};
+  imeiRowsFiltrati.forEach(r=>{  // ← usa i filtrati
+    const mod = r.modello.toLowerCase();
+    if(mod.includes('a56')) IMEI_PER_MODELLO['Samsung A56'].push(r.imei);
+    else if(mod.includes('xcover')) IMEI_PER_MODELLO['Samsung Xcover 7'].push(r.imei);
+  });
+  
+  localStorage.setItem(CACHE_KEY_IMEI, JSON.stringify(imeiRowsFiltrati));
+  localStorage.setItem(CACHE_KEY_TIME, now.toString());
+}
 
     if(el)el.style.display='none';
     console.log('Dati da Drive — Utenti:',UTENTI.length,'A56:',IMEI_PER_MODELLO['Samsung A56'].length,'Xcover:',IMEI_PER_MODELLO['Samsung Xcover 7'].length);
@@ -516,7 +565,7 @@ async function salvaRigaRegistro(logData){
         matricola: logData.matricola,
         email: logData.email,
         modello: logData.modello,
-        imei: logData.imei,
+        numeroSerie: logData.imei,
         dataOggi: logData.dataOggi,
         filename: logData.filename,
         orario: orario
