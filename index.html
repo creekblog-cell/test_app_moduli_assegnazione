@@ -272,6 +272,49 @@ async function fetchT(url,ms=15000){
 }
 
   async function caricaDatiDaDrive() {
+
+    function normalizza(v) {
+  return (v || '').trim().toLowerCase();
+}
+
+function chiavePersona(r) {
+  const email = normalizza(r.email);
+  const matricola = normalizza(r.matricola);
+  return email || matricola;
+}
+
+function chiaveModello(v) {
+  return normalizza(v).replace(/\s+/g, ' ');
+}
+
+function costruisciConteggiRegistro() {
+  const count = {};
+  registroAssegnati.forEach(r => {
+    const persona = chiavePersona(r);
+    const modello = chiaveModello(r.modello || r.modello_assegnato || '');
+    if (!persona || !modello) return;
+    const key = persona + '||' + modello;
+    count[key] = (count[key] || 0) + 1;
+  });
+  return count;
+}
+
+function filtraUtentiDisponibili(lista) {
+  const count = costruisciConteggiRegistro();
+
+  return lista.filter(u => {
+    const persona = chiavePersona(u);
+    const modello = chiaveModello(u.modello_nuovo || '');
+    if (!persona || !modello) return true;
+
+    const key = persona + '||' + modello;
+    if (count[key] > 0) {
+      count[key]--;
+      return false;
+    }
+    return true;
+  });
+}
   const el = document.getElementById('loading-status');
 
   const CACHE_KEY_UTENTI = 'cache_utenti';
