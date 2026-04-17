@@ -669,7 +669,24 @@ const _logData = {
   assegnamento: selectedUser.assegnamento || '',
   presidio: selectedUser.presidio || ''
 };
-window.registroData = _logData;
+const dataAssegnazione = data;
+const orario = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+
+window.registroData = {
+  nome: nome,
+  email: email,
+  modello: modello,
+  data_assegnazione: dataAssegnazione,
+  url_modulo: '',
+  orario: orario,
+  imei: imei,
+  nome_file_pdf: fn,
+  matricola: matricola,
+  numero: selectedUser.numero || '',
+  imei_old: selectedUser.imeiold || '',
+  assegnamento: selectedUser.assegnamento || '',
+  presidio: selectedUser.presidio || ''
+}
   window._emailAperta=false;
   uploadToDrive(doc.output('blob'),fn);
   // Salva i dati per il mailto manuale
@@ -677,7 +694,7 @@ window.registroData = _logData;
     sogg:encodeURIComponent('Modulo Assegnazione - '+email),
     corpo:encodeURIComponent('Gentile Utente,\n\nIn allegato il modulo di assegnazione del dispositivo aziendale.\n\nAssegnatario: '+nome+'\nMatricola: '+matricola+'\nModello: '+modello+'\nIMEI: '+imei+'\nData: '+data+'\n\nTeam Supporto Rinnovo Smartphone'),
    };
-  window._registroData={nome,matricola,email,modello,imei,dataOggi:data,filename:fn};
+  
   const btnE=document.getElementById('btn-invia-email');
   if(btnE){btnE.disabled=false;btnE.style.background='var(--accent)';btnE.innerHTML='<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg> Invia email';}
   const btnN=document.getElementById('btn-nuovo-modulo');
