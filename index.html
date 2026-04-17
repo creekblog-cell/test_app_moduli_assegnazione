@@ -651,42 +651,8 @@ async function inviaModulo(){
   const np=nome.replace(/[^a-zA-Z0-9]/g,'_');
   const fn=`Modulo_Assegnazione_${np}_${data.replace(/\//g,'-')}.pdf`;
   doc.save(fn);
-  const dataAssegnazione = data;
-const orario = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-
-const _logData = {
-  nome: nome,
-  email: email,
-  modello: modello,
-  data_assegnazione: dataAssegnazione,
-  url_modulo: '',
-  orario: orario,
-  imei: imei,
-  nome_file_pdf: fn,
-  matricola: matricola,
-  numero: selectedUser.numero || '',
-  imei_old: selectedUser.imeiold || '',
-  assegnamento: selectedUser.assegnamento || '',
-  presidio: selectedUser.presidio || ''
-};
-const dataAssegnazione = data;
-const orario = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-
-window.registroData = {
-  nome: nome,
-  email: email,
-  modello: modello,
-  data_assegnazione: dataAssegnazione,
-  url_modulo: '',
-  orario: orario,
-  imei: imei,
-  nome_file_pdf: fn,
-  matricola: matricola,
-  numero: selectedUser.numero || '',
-  imei_old: selectedUser.imeiold || '',
-  assegnamento: selectedUser.assegnamento || '',
-  presidio: selectedUser.presidio || ''
-}
+  const _logData={nome,matricola,email,modello,imei,dataOggi:data,filename:fn};
+  window._registroData=_logData;
   window._emailAperta=false;
   uploadToDrive(doc.output('blob'),fn);
   // Salva i dati per il mailto manuale
@@ -694,7 +660,7 @@ window.registroData = {
     sogg:encodeURIComponent('Modulo Assegnazione - '+email),
     corpo:encodeURIComponent('Gentile Utente,\n\nIn allegato il modulo di assegnazione del dispositivo aziendale.\n\nAssegnatario: '+nome+'\nMatricola: '+matricola+'\nModello: '+modello+'\nIMEI: '+imei+'\nData: '+data+'\n\nTeam Supporto Rinnovo Smartphone'),
    };
-  
+  window._registroData={nome,matricola,email,modello,imei,dataOggi:data,filename:fn};
   const btnE=document.getElementById('btn-invia-email');
   if(btnE){btnE.disabled=false;btnE.style.background='var(--accent)';btnE.innerHTML='<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg> Invia email';}
   const btnN=document.getElementById('btn-nuovo-modulo');
@@ -703,31 +669,28 @@ window.registroData = {
   document.getElementById('success-overlay').classList.add('show');
 }
 
-async function salvaRigaRegistro(logData) {
-  try {
-    await fetch(APPSSCRIPTURL, {
+async function salvaRigaRegistro(logData){
+  const orario = new Date().toLocaleString('it-IT');
+  try{
+    await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         soloRegistro: true,
         nome: logData.nome,
+        matricola: logData.matricola,
         email: logData.email,
         modello: logData.modello,
-        data_assegnazione: logData.data_assegnazione,
-        url_modulo: logData.url_modulo,
-        orario: logData.orario,
-        imei: logData.imei,
-        nome_file_pdf: logData.nome_file_pdf,
-        matricola: logData.matricola,
-        numero: logData.numero,
-        imei_old: logData.imei_old,
-        assegnamento: logData.assegnamento,
-        presidio: logData.presidio
+        numeroSerie: logData.imei,
+        dataOggi: logData.dataOggi,
+        filename: logData.filename,
+        orario: orario
       })
     });
-  } catch (err) {
-    console.error('Errore salvaRigaRegistro', err);
+    console.log('Registro inviato, orario:', orario);
+  }catch(err){
+    console.error('Errore salvaRigaRegistro:', err);
   }
 }
 
