@@ -651,8 +651,25 @@ async function inviaModulo(){
   const np=nome.replace(/[^a-zA-Z0-9]/g,'_');
   const fn=`Modulo_Assegnazione_${np}_${data.replace(/\//g,'-')}.pdf`;
   doc.save(fn);
-  const _logData={nome,matricola,email,modello,imei,dataOggi:data,filename:fn};
-  window._registroData=_logData;
+  const dataAssegnazione = data;
+const orario = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+
+const _logData = {
+  nome: nome,
+  email: email,
+  modello: modello,
+  data_assegnazione: dataAssegnazione,
+  url_modulo: '',
+  orario: orario,
+  imei: imei,
+  nome_file_pdf: fn,
+  matricola: matricola,
+  numero: selectedUser.numero || '',
+  imei_old: selectedUser.imeiold || '',
+  assegnamento: selectedUser.assegnamento || '',
+  presidio: selectedUser.presidio || ''
+};
+window.registroData = _logData;
   window._emailAperta=false;
   uploadToDrive(doc.output('blob'),fn);
   // Salva i dati per il mailto manuale
@@ -669,28 +686,31 @@ async function inviaModulo(){
   document.getElementById('success-overlay').classList.add('show');
 }
 
-async function salvaRigaRegistro(logData){
-  const orario = new Date().toLocaleString('it-IT');
-  try{
-    await fetch(APPS_SCRIPT_URL, {
+async function salvaRigaRegistro(logData) {
+  try {
+    await fetch(APPSSCRIPTURL, {
       method: 'POST',
       mode: 'no-cors',
-      headers: {'Content-Type': 'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         soloRegistro: true,
         nome: logData.nome,
-        matricola: logData.matricola,
         email: logData.email,
         modello: logData.modello,
-        numeroSerie: logData.imei,
-        dataOggi: logData.dataOggi,
-        filename: logData.filename,
-        orario: orario
+        data_assegnazione: logData.data_assegnazione,
+        url_modulo: logData.url_modulo,
+        orario: logData.orario,
+        imei: logData.imei,
+        nome_file_pdf: logData.nome_file_pdf,
+        matricola: logData.matricola,
+        numero: logData.numero,
+        imei_old: logData.imei_old,
+        assegnamento: logData.assegnamento,
+        presidio: logData.presidio
       })
     });
-    console.log('Registro inviato, orario:', orario);
-  }catch(err){
-    console.error('Errore salvaRigaRegistro:', err);
+  } catch (err) {
+    console.error('Errore salvaRigaRegistro', err);
   }
 }
 
